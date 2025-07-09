@@ -2,16 +2,22 @@ pipeline {
     agent any
 
     tools {
-        maven 'Default Maven'
+        Maven3 
     }
 
     stages {
-        stage('Build and Sonar') {
+        stage('Build') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+        stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv() {
-                    sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=My_Java_Project_Sonar'
+                    sh 'mvn sonar:sonar -Dsonar.projectKey=My_Java_Project_Sonar'
                 }
             }
         }
     }
 }
+
