@@ -10,8 +10,13 @@ pipeline {
         SONAR_TOKEN    = 'squ_c18ad05173f8903e567e462b45537b7aeeb7c708'
     }
 
-    stages {
-        stage('Build and Sonar') {
+    stage('Build') {
+            steps {
+                // Your build commands, e.g. mvn clean install
+                sh 'mvn clean compile'
+            }
+        }
+stage('sonarqube'){
             steps {
                 withSonarQubeEnv() {
                     sh """
@@ -26,6 +31,6 @@ pipeline {
             }
         }
     }
-}
+
 
 
