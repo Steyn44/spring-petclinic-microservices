@@ -17,8 +17,8 @@ pipeline {
 
         stage('Build') {
             steps {
-                //sh 'mvn clean install'
-                sh 'mvn clean compile'
+                sh 'mvn clean install'
+                //sh 'mvn clean compile'
             }
         }
         
@@ -26,9 +26,9 @@ pipeline {
   stage('SonarQube Analysis') {
     def mvn = tool 'Default Maven';
     withSonarQubeEnv() {
-      sh "${mvn}/bin/mvn verify sonar:sonar -Dsonar.projectKey=My_Java_Project_Sonar"
+        sh "${mvn}/bin/mvn verify sonar:sonar -Dsonar.projectKey=My_Java_Project_Sonar -Dsonar.java.binaries=**/target/classes"
     }
-  }
+}
        
      
        
