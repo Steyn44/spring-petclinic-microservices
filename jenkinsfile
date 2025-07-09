@@ -2,31 +2,6 @@ pipeline {
     agent any
 
     tools {
-        // Ensure SonarQube Scanner is installed and named here
-        sonarQubeScanner 'SonarQube'
-        Maven3 'Default Maven' // This should match the Maven name configured in Jenkins Global Tools
-    }
-    environment {
-        SONAR_HOST_URL = 'http://65.0.133.62:9000/'
-        SONAR_LOGIN = 'squ_c18ad05173f8903e567e462b45537b7aeeb7c708'
-    }
-
-    stages {
-
-        
-
-        stage('Build') {
-            steps {
-                sh 'mvn clean install'
-                //sh 'mvn clean compile'
-            }
-        }
-        
-
- pipeline {
-    agent any
-
-    tools {
         maven 'Default Maven'
     }
 
@@ -38,11 +13,5 @@ pipeline {
                 }
             }
         }
-    }
-}
-
-       
-     
-       
     }
 }
