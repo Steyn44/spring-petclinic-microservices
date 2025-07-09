@@ -8,7 +8,7 @@ pipeline {
     }
     environment {
         SONAR_HOST_URL = 'http://13.127.214.92:9000'
-        SONAR_LOGIN = 'squ_888824494ba783346a9ad122748d0f5da993def0'
+        SONAR_LOGIN = 'squ_c18ad05173f8903e567e462b45537b7aeeb7c708'
     }
 
     stages {
