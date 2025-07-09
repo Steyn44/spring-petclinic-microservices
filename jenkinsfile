@@ -23,12 +23,24 @@ pipeline {
         }
         
 
-  stage('SonarQube Analysis') {
-    def mvn = tool 'Default Maven';
-    withSonarQubeEnv() {
-        sh "${mvn}/bin/mvn verify sonar:sonar -Dsonar.projectKey=My_Java_Project_Sonar -Dsonar.java.binaries=**/target/classes"
+ pipeline {
+    agent any
+
+    tools {
+        maven 'Default Maven'
+    }
+
+    stages {
+        stage('Build and Sonar') {
+            steps {
+                withSonarQubeEnv() {
+                    sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=My_Java_Project_Sonar'
+                }
+            }
+        }
     }
 }
+
        
      
        
