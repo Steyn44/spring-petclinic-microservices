@@ -2,22 +2,30 @@ pipeline {
     agent any
 
     tools {
-        Maven3 
+        Maven3 'Default Maven'
+    }
+
+    environment {
+        SONAR_HOST_URL = 'http://65.0.133.62:9000'
+        SONAR_TOKEN    = 'squ_c18ad05173f8903e567e462b45537b7aeeb7c708'
     }
 
     stages {
-        stage('Build') {
-            steps {
-                sh 'mvn clean install'
-            }
-        }
-        stage('SonarQube Analysis') {
+        stage('Build and Sonar') {
             steps {
                 withSonarQubeEnv() {
-                    sh 'mvn sonar:sonar -Dsonar.projectKey=My_Java_Project_Sonar'
+                    sh """
+                        mvn clean verify sonar:sonar \
+                          -Dsonar.projectKey=My_Java_Project_Sonar \
+                          -Dsonar.projectName=My_Java_Project_Sonar \
+                          -Dsonar.host.url=http://65.0.133.62:9000/ \
+                          -Dsonar.token=squ_c18ad05173f8903e567e462b45537b7aeeb7c708 \
+                          -Dsonar.sources=spring-petclinic-admin-server/src,spring-petclinic-api-gateway/src,spring-petclinic-config-server/src,spring-petclinic-customers-service/src,spring-petclinic-discovery-server/src,spring-petclinic-genai-service/src,spring-petclinic-vets-service/src,spring-petclinic-visits-service/src
+                    """
                 }
             }
         }
     }
 }
+
 
