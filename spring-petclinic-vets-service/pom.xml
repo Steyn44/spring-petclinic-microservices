@@ -133,6 +133,33 @@
             <id>buildDocker</id>
             <build>
                 <plugins>
+<plugin>
+  <groupId>org.jacoco</groupId>
+  <artifactId>jacoco-maven-plugin</artifactId>
+  <version>0.8.8</version>
+  <executions>
+    <execution>
+      <id>prepare-agent</id>
+      <goals>
+        <goal>prepare-agent</goal>
+      </goals>
+    </execution>
+    <execution>
+      <id>report</id>
+      <phase>verify</phase>
+      <goals>
+        <goal>report</goal>
+      </goals>
+      <configuration>
+        <outputDirectory>${project.build.directory}/jacoco-report</outputDirectory>
+        <reports>
+          <xml enabled="true"/>
+          <html enabled="true"/>
+        </reports>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
