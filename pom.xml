@@ -2,43 +2,31 @@ pipeline {
     agent any
 
     tools {
-        sonarQubeScanner 'SonarQube Scanner'
         Maven3 'Default Maven'
+        sonarQubeScanner 'SonarQube Scanner'
     }
+
     environment {
         SONAR_HOST_URL = 'http://65.0.133.62:9000'
         SONAR_LOGIN = 'squ_888824494ba783346a9ad122748d0f5da993def0'
     }
 
     stages {
-        stage('Build') {
+        stage('Build and Test') {
             steps {
                 sh 'mvn clean verify'
-            }
-        }
-
-        stage('Check Target Folders') {
-            steps {
-                sh 'find . -type d -name target || echo "No target folders found."'
-            }
-        }
-
-        stage('Check JaCoCo Reports') {
-            steps {
-                sh 'find . -name jacoco.xml || echo "Jacoco XML not found!"'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv() {
-                    sh """
+                    sh '''
                         mvn sonar:sonar \
-                            -pl spring-petclinic-genai-service \
                             -Dsonar.projectKey=My_Java_Project_Sonar \
-                            -Dsonar.projectName=My_Java_Project_Sonar \
-                            -Dsonar.coverage.jacoco.xmlReportPaths=spring-petclinic-genai-service/target/site/jacoco/jacoco.xml
-                    """
+                            -Dsonar.coverage.jacoco.xmlReportPaths=spring-petclinic-genai-service/target/site/jacoco/jacoco.xml \
+                            -Dsonar.projectName=My_Java_Project_Sonar
+                    '''
                 }
             }
         }
