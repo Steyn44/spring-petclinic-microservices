@@ -28,6 +28,7 @@ pipeline {
     withSonarQubeEnv() {
      sh '''
                         mvn clean verify sonar:sonar \
+                        sh 'ls -l target/site/jacoco/jacoco.xml || echo "jacoco.xml not found"' \
                             -Dsonar.projectKey=My_Java_Project_Sonar \
                             -Dsonar.projectName=My_Java_Project_Sonar \
                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml,target/site/jacoco-it/jacoco.xml
