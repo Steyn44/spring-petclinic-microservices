@@ -2,9 +2,8 @@ pipeline {
     agent any
 
     tools {
-        // Ensure SonarQube Scanner is installed and named here
         sonarQubeScanner 'SonarQube Scanner'
-        Maven3 'Default Maven' // This should match the Maven name configured in Jenkins Global Tools
+        Maven3 'Default Maven'
     }
     environment {
         SONAR_HOST_URL = 'http://13.127.214.92:9000'
@@ -12,28 +11,29 @@ pipeline {
     }
 
     stages {
-
-        
-
-        stage('Build') {
+        stage('Build and Test') {
             steps {
-                // Your build commands, e.g. mvn clean install
-                sh 'mvn clean compile'
+                sh 'mvn clean verify'
             }
         }
-        
 
-  stage('SonarQube Analysis') {
-    def mvn = tool 'Default Maven';
-    withSonarQubeEnv() {
-     sh '''
-                        mvn clean verify sonar:sonar \
-                        sh 'ls -l target/site/jacoco/jacoco.xml || echo "jacoco.xml not found"' \
+        stage('Check Jacoco Report Exists') {
+            steps {
+                sh 'ls -l target/site/jacoco/jacoco.xml || echo "jacoco.xml not found"'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv() {
+                    sh '''
+                        mvn sonar:sonar \
                             -Dsonar.projectKey=My_Java_Project_Sonar \
                             -Dsonar.projectName=My_Java_Project_Sonar \
-                           -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml,target/site/jacoco-it/jacoco.xml
-
+                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml,target/site/jacoco-it/jacoco.xml
                     '''
+                }
+            }
+        }
     }
-  }
-       
+}
