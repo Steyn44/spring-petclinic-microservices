@@ -1,34 +1,228 @@
-pipeline {
-    agent any
+@@ -1,227 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-    tools {
-        Maven3 'Default Maven'
-        sonarQubeScanner 'SonarQube Scanner'
-    }
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.1</version>
+    </parent>
 
-    environment {
-        SONAR_HOST_URL = 'http://65.0.133.62:9000'
-        SONAR_LOGIN = 'squ_888824494ba783346a9ad122748d0f5da993def0'
-    }
+    <groupId>org.springframework.samples</groupId>
+    <artifactId>spring-petclinic-microservices</artifactId>
+    <version>3.4.1</version>
+    <name>${project.artifactId}</name>
+    <packaging>pom</packaging>
 
-    stages {
-        stage('Build and Test') {
-            steps {
-                sh 'mvn clean verify'
-            }
-        }
+    <modules>
+        <module>spring-petclinic-admin-server</module>
+        <module>spring-petclinic-customers-service</module>
+        <module>spring-petclinic-vets-service</module>
+        <module>spring-petclinic-visits-service</module>
+        <module>spring-petclinic-genai-service</module>
+        <module>spring-petclinic-config-server</module>
+        <module>spring-petclinic-discovery-server</module>
+        <module>spring-petclinic-api-gateway</module>
+    </modules>
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv() {
-                    sh '''
-                        mvn sonar:sonar \
-                            -Dsonar.projectKey=My_Java_Project_Sonar \
-                            -Dsonar.coverage.jacoco.xmlReportPaths=spring-petclinic-genai-service/target/site/jacoco/jacoco.xml \
-                            -Dsonar.projectName=My_Java_Project_Sonar
-                    '''
-                }
-            }
-        }
-    }
-}
+    <properties>
+        <java.version>17</java.version>
+
+        <spring-cloud.version>2024.0.0</spring-cloud.version>
+        <chaos-monkey-spring-boot.version>3.1.0</chaos-monkey-spring-boot.version>
+        <jolokia-core.version>1.7.1</jolokia-core.version>
+
+        <docker.image.prefix>springcommunity</docker.image.prefix>
+        <docker.image.exposed.port>9090</docker.image.exposed.port>
+        <docker.image.dockerfile.dir>${basedir}</docker.image.dockerfile.dir>
+        <container.executable>docker</container.executable>
+        <container.platform>linux/amd64</container.platform>
+        <container.build.extraarg>--load</container.build.extraarg>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>de.codecentric</groupId>
+                <artifactId>chaos-monkey-spring-boot</artifactId>
+                <version>${chaos-monkey-spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jolokia</groupId>
+                <artifactId>jolokia-core</artifactId>
+                <version>${jolokia-core.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <profiles>
+        <profile>
+            <id>springboot</id>
+            <activation>
+                <file>
+                    <exists>src/main/resources/application.yml</exists>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+
+                    <!-- Spring Boot build info -->
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>build-info</goal>
+                                </goals>
+                                <configuration>
+                                    <additionalProperties>
+                                        <encoding.source>${project.build.sourceEncoding}</encoding.source>
+                                        <encoding.reporting>${project.reporting.outputEncoding}</encoding.reporting>
+                                        <java.version>${java.version}</java.version>
+                                    </additionalProperties>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Git commit info -->
+                    <plugin>
+                        <groupId>io.github.git-commit-id</groupId>
+                        <artifactId>git-commit-id-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>revision</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <verbose>true</verbose>
+                            <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
+                            <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                            <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                            <failOnNoGitDirectory>false</failOnNoGitDirectory>
+                            <failOnUnableToExtractRepoInfo>false</failOnUnableToExtractRepoInfo>
+                        </configuration>
+                    </plugin>
+
+                    <!-- Enforce Java version -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-java</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireJavaVersion>
+                                            <message>
+                                                🚫 Java version error: This project requires Java ${java.version} or higher.
+                                                Your current Java version is ${java.version}
+                                                To fix this:
+                                                1. Download and install Java 17 or higher
+                                                2. Set JAVA_HOME
+                                                3. Run build again
+                                            </message>
+                                            <version>${java.version}</version>
+                                        </requireJavaVersion>
+                                    </rules>
+                                    <failFast>true</failFast>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- ✅ ✅ Jacoco plugin with multi-module aggregate -->
+                    <plugin>
+                       <groupId>org.jacoco</groupId>
+                         <artifactId>jacoco-maven-plugin</artifactId>
+                          <version>0.8.14-SNAPSHOT</version>
+                        <executions>
+                            <!-- This attaches the JaCoCo agent to all tests -->
+                            <execution>
+                                <id>prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <!-- This generates an aggregated report for all modules -->
+                            <execution>
+                                <id>report-aggregate</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report-aggregate</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/jacoco-aggregate-report</outputDirectory>
+                                    <reports>
+                                        <xml enabled="true"/>
+                                        <html enabled="true"/>
+                                    </reports>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>buildDocker</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>exec-maven-plugin</artifactId>
+                            <version>3.1.1</version>
+                            <executions>
+                                <execution>
+                                    <id>docker-build</id>
+                                    <phase>install</phase>
+                                    <goals>
+                                        <goal>exec</goal>
+                                    </goals>
+                                    <configuration>
+                                        <executable>${container.executable}</executable>
+                                        <workingDirectory>${docker.image.dockerfile.dir}</workingDirectory>
+                                        <arguments>
+                                            <argument>build</argument>
+                                            <argument>-f</argument>
+                                            <argument>Dockerfile</argument>
+                                            <argument>--build-arg</argument>
+                                            <argument>ARTIFACT_NAME=${project.build.finalName}</argument>
+                                            <argument>--build-arg</argument>
+                                            <argument>EXPOSED_PORT=${docker.image.exposed.port}</argument>
+                                            <argument>--platform</argument>
+                                            <argument>${container.platform}</argument>
+                                            <argument>${container.build.extraarg}</argument>
+                                            <argument>-t</argument>
+                                            <argument>${docker.image.prefix}/${project.artifactId}</argument>
+                                            <argument>${project.build.directory}</argument>
+                                        </arguments>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
+
+</project>
