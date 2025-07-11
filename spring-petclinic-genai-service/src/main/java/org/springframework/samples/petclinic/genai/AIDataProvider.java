@@ -1,77 +1,139 @@
 package org.springframework.samples.petclinic.genai;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.samples.petclinic.genai.dto.AddPetRequest;
 import org.springframework.samples.petclinic.genai.dto.OwnerDetails;
+import org.springframework.samples.petclinic.genai.dto.OwnerRequest;
 import org.springframework.samples.petclinic.genai.dto.PetDetails;
-import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClient.RequestBodySpec;
+import org.springframework.web.reactive.function.client.WebClient.RequestBodyUriSpec;
+import org.springframework.web.reactive.function.client.WebClient.RequestHeadersUriSpec;
+import org.springframework.web.reactive.function.client.WebClient.ResponseSpec;
+import reactor.core.publisher.Mono;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+public class AIDataProviderTest {
 
-/**
- * Functions that are invoked by the LLM will use this bean to query the system of record
- * for information such as listing owners and vets, or adding pets to an owner.
- *
- * @author Oded Shopen
- */
-@Service
-public class AIDataProvider {
+    private WebClient.Builder webClientBuilder;
+    private WebClient webClient;
+    private VectorStore vectorStore;
+    private AIDataProvider aiDataProvider;
 
-	private final VectorStore vectorStore;
-    private final String ownersHostname = "http://customers-service/";
+    @BeforeEach
+    void setUp() {
+        webClientBuilder = mock(WebClient.Builder.class);
+        webClient = mock(WebClient.class);
+        vectorStore = mock(VectorStore.class);
 
-    private final WebClient webClient;
+        when(webClientBuilder.build()).thenReturn(webClient);
 
+        aiDataProvider = new AIDataProvider(webClientBuilder, vectorStore);
+    }
 
-	public AIDataProvider(WebClient.Builder webClientBuilder, VectorStore vectorStore) {
-		this.webClient = webClientBuilder.build();
-		this.vectorStore = vectorStore;
-	}
+    @Test
+    void getAllOwners_shouldReturnOwnersResponse() {
+        List<OwnerDetails> owners = List.of(new OwnerDetails());
 
-	public OwnersResponse getAllOwners() {
-		return new OwnersResponse(webClient
-	            .get()
-	            .uri(ownersHostname + "owners")
-	            .retrieve()
-	            .bodyToMono(new ParameterizedTypeReference<List<OwnerDetails>>() {})
-	            .block());
-	}
+        var request = mock(RequestHeadersUriSpec.class);
+        var responseSpec = mock(ResponseSpec.class);
 
-	public VetResponse getVets(VetRequest request) throws JsonProcessingException {
-		ObjectMapper objectMapper = new ObjectMapper();
-		String vetAsJson = objectMapper.writeValueAsString(request.vet());
+        when(webClient.get()).thenReturn(request);
+        when(request.uri("http://customers-service/owners")).thenReturn(request);
+        when(request.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
+                .thenReturn(Mono.just(owners));
 
-		SearchRequest sr = SearchRequest.from(SearchRequest.defaults()).withQuery(vetAsJson).withTopK(20);
-		if (request.vet() == null) {
-			// Provide a limit of 50 results when zero parameters are sent
-			sr = sr.withTopK(50);
-		}
+        OwnersResponse result = aiDataProvider.getAllOwners();
 
-		List<Document> topMatches = this.vectorStore.similaritySearch(sr);
-		List<String> results = topMatches.stream().map(Document::getContent).toList();
-		return new VetResponse(results);
-	}
+        assertThat(result.owners()).hasSize(1);
+    }
 
-	public AddedPetResponse addPetToOwner(AddPetRequest request) {
-		return new AddedPetResponse(webClient
-	            .post()
-	            .uri(ownersHostname + "owners/"+request.ownerId()+"/pets")
-	            .bodyValue(request.pet())
-	            .retrieve().bodyToMono(PetDetails.class).block());
-	}
+    @Test
+    void addPetToOwner_shouldReturnAddedPetResponse() {
+        PetDetails pet = new PetDetails();
+        AddPetRequest requestDto = new AddPetRequest(1, pet);
 
-	public OwnerResponse addOwnerToPetclinic(OwnerRequest ownerRequest) {
-		return new OwnerResponse(webClient
-	            .post()
-	            .uri(ownersHostname + "owners")
-	            .bodyValue(ownerRequest)
-	            .retrieve().bodyToMono(OwnerDetails.class).block());
-	}
+        var request = mock(RequestBodyUriSpec.class);
+        var bodySpec = mock(RequestBodySpec.class);
+        var responseSpec = mock(ResponseSpec.class);
 
+        when(webClient.post()).thenReturn(request);
+        when(request.uri("http://customers-service/owners/1/pets")).thenReturn(bodySpec);
+        when(bodySpec.bodyValue(pet)).thenReturn(bodySpec);
+        when(bodySpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(PetDetails.class)).thenReturn(Mono.just(pet));
+
+        AddedPetResponse response = aiDataProvider.addPetToOwner(requestDto);
+
+        assertThat(response.pet()).isSameAs(pet);
+    }
+
+    @Test
+    void addOwnerToPetclinic_shouldReturnOwnerResponse() {
+        OwnerDetails ownerDetails = new OwnerDetails();
+        OwnerRequest ownerRequest = new OwnerRequest();
+
+        var request = mock(RequestBodyUriSpec.class);
+        var bodySpec = mock(RequestBodySpec.class);
+        var responseSpec = mock(ResponseSpec.class);
+
+        when(webClient.post()).thenReturn(request);
+        when(request.uri("http://customers-service/owners")).thenReturn(bodySpec);
+        when(bodySpec.bodyValue(ownerRequest)).thenReturn(bodySpec);
+        when(bodySpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(OwnerDetails.class)).thenReturn(Mono.just(ownerDetails));
+
+        OwnerResponse response = aiDataProvider.addOwnerToPetclinic(ownerRequest);
+
+        assertThat(response.owner()).isSameAs(ownerDetails);
+    }
+
+    @Test
+    void getVets_shouldQueryVectorStore_withNonNullVet() throws Exception {
+        Vet dummyVet = new Vet("Dr. House");
+        VetRequest vetRequest = new VetRequest(dummyVet);
+
+        List<Document> documents = List.of(new Document("Doc1 Content"));
+
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(documents);
+
+        VetResponse response = aiDataProvider.getVets(vetRequest);
+
+        assertThat(response.vets()).containsExactly("Doc1 Content");
+
+        ArgumentCaptor<SearchRequest> captor = ArgumentCaptor.forClass(SearchRequest.class);
+        verify(vectorStore).similaritySearch(captor.capture());
+        assertThat(captor.getValue().getTopK()).isEqualTo(20);
+        assertThat(captor.getValue().getQuery()).contains("Dr. House");
+    }
+
+    @Test
+    void getVets_shouldQueryVectorStore_withNullVet() throws Exception {
+        VetRequest vetRequest = new VetRequest(null);
+
+        List<Document> documents = List.of(new Document("Fallback Doc"));
+
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(documents);
+
+        VetResponse response = aiDataProvider.getVets(vetRequest);
+
+        assertThat(response.vets()).containsExactly("Fallback Doc");
+
+        ArgumentCaptor<SearchRequest> captor = ArgumentCaptor.forClass(SearchRequest.class);
+        verify(vectorStore).similaritySearch(captor.capture());
+        assertThat(captor.getValue().getTopK()).isEqualTo(50);
+    }
 }
