@@ -147,9 +147,9 @@
 
                     <!-- ✅ ✅ Jacoco plugin with multi-module aggregate -->
                     <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.8</version>
+                       <groupId>org.jacoco</groupId>
+                         <artifactId>jacoco-maven-plugin</artifactId>
+                          <version>0.8.14-SNAPSHOT</version>
                         <executions>
                             <!-- This attaches the JaCoCo agent to all tests -->
                             <execution>
