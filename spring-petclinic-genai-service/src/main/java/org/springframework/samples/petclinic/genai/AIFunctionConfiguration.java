@@ -20,7 +20,8 @@ import org.springframework.samples.petclinic.genai.dto.Vet;
 import org.springframework.samples.petclinic.genai.dto.VetRequest;
 import org.springframework.samples.petclinic.genai.dto.VetResponse;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * This class defines the @Bean functions that the LLM provider will invoke when it
@@ -35,39 +36,31 @@ class AIFunctionConfiguration {
 
     private static final Logger LOG = LoggerFactory.getLogger(AIFunctionConfiguration.class);
 
-	@Bean
-	@Description("List the owners that the pet clinic has")
-	public Function<OwnerRequest, OwnersResponse> listOwners(AIDataProvider petclinicAiProvider) {
-		return request -> petclinicAiProvider.getAllOwners();
-	}
+    @Bean
+    @Description("List the owners that the pet clinic has")
+    public Function<OwnerRequest, OwnersResponse> listOwners(AIDataProvider petclinicAiProvider) {
+        return request -> petclinicAiProvider.getAllOwners();
+    }
 
-	@Bean
-	@Description("Add a new pet owner to the pet clinic. " +
-			"The Owner must include a first name and a last name " +
-			"as two separate words, plus an address and a 10-digit phone number")
-	public Function<OwnerRequest, OwnerResponse> addOwnerToPetclinic(AIDataProvider petclinicAiDataProvider) {
-		return petclinicAiDataProvider::addOwnerToPetclinic;
-	}
+    @Bean
+    @Description("Add a new pet owner to the pet clinic. The Owner must include a first name and a last name "
+            + "as two separate words, plus an address and a 10-digit phone number")
+    public Function<OwnerRequest, OwnerResponse> addOwnerToPetclinic(AIDataProvider petclinicAiDataProvider) {
+        return petclinicAiDataProvider::addOwnerToPetclinic;
+    }
 
-	@Bean
-	@Description("List the veterinarians that the pet clinic has")
-	public Function<VetRequest, VetResponse> listVets(AIDataProvider petclinicAiProvider) {
-		return request -> {
-			try {
-				return petclinicAiProvider.getVets(request);
-			} catch (JsonProcessingException e) {
-				LOG.error("Error processing JSON in the listVets function", e);
-				return null;
-			}
-		};
-	}
+    @Bean
+    @Description("List the veterinarians that the pet clinic has")
+    public Function<VetRequest, VetResponse> listVets(AIDataProvider petclinicAiProvider) {
+        return request -> petclinicAiProvider.getVets(request);
+    }
 
-	@Bean
-	@Description("Add a pet with the specified petTypeId, " +
-			"to an owner identified by the ownerId. " +
-			"The allowed Pet types IDs are only: " +
-			"1 - cat 2 - dog 3 - lizard 4 - snake 5 - bird 6 - hamster")
-	public Function<AddPetRequest, AddedPetResponse> addPetToOwner(AIDataProvider petclinicAiProvider) {
-		return petclinicAiProvider::addPetToOwner;
-	}
+    @Bean
+    @Description("Add a pet with the specified petTypeId, to an owner identified by the ownerId. "
+            + "The allowed Pet types IDs are only: "
+            + "1 - cat, 2 - dog, 3 - lizard, 4 - snake, 5 - bird, 6 - hamster")
+    public Function<AddPetRequest, AddedPetResponse> addPetToOwner(AIDataProvider petclinicAiProvider) {
+        return petclinicAiProvider::addPetToOwner;
+    }
+
 }
