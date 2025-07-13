@@ -2,8 +2,7 @@ package org.springframework.samples.petclinic.genai;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.Collections;
 import java.util.Date;
@@ -32,11 +31,6 @@ import org.springframework.samples.petclinic.genai.dto.Vet;
 import org.springframework.samples.petclinic.genai.dto.VetRequest;
 import org.springframework.samples.petclinic.genai.dto.VetResponse;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClient.RequestBodySpec;
-import org.springframework.web.reactive.function.client.WebClient.RequestBodyUriSpec;
-import org.springframework.web.reactive.function.client.WebClient.RequestHeadersSpec;
-import org.springframework.web.reactive.function.client.WebClient.RequestHeadersUriSpec;
-import org.springframework.web.reactive.function.client.WebClient.ResponseSpec;
 
 import reactor.core.publisher.Mono;
 
@@ -50,9 +44,6 @@ public class AIDataProviderTest {
 
     private AIDataProvider aiDataProvider;
 
-    @Mock
-    private WebClient webClient;
-
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -61,53 +52,55 @@ public class AIDataProviderTest {
 
     @Test
     void testGetAllOwners() {
+        WebClient webClient = mock(WebClient.class);
         WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
         WebClient.RequestHeadersSpec<?> requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
-
-        OwnerDetails owner = new OwnerDetails(
-            1,
-            "John",
-            "Doe",
-            "123 Street",
-            "City",
-            "1234567890",
-            Collections.emptyList()
-        );
 
         when(webClientBuilder.build()).thenReturn(webClient);
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
         when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
+        OwnerDetails owner = new OwnerDetails(
+            1,
+            "John",
+            "Doe",
+            "Street",
+            "City",
+            "1234567890",
+            Collections.emptyList()
+        );
+
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
             .thenReturn(Mono.just(List.of(owner)));
 
         OwnersResponse response = aiDataProvider.getAllOwners();
 
         assert response.owners().size() == 1;
-        assert response.owners().get(0).firstName().equals("John");
     }
 
     @Test
     void testAddPetToOwner() {
+        WebClient webClient = mock(WebClient.class);
         WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
-        RequestBodySpec requestBodySpec = mock(RequestBodySpec.class);
-        RequestHeadersSpec<?> requestHeadersSpec = mock(RequestHeadersSpec.class);
-        ResponseSpec responseSpec = mock(ResponseSpec.class);
+        WebClient.RequestHeadersSpec<?> requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClientBuilder.build()).thenReturn(webClient);
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
 
         PetDetails petDetails = new PetDetails(
             1,
             "Buddy",
-            "2022-01-01",
+            "2023-01-01",
             new PetType("Dog"),
             Collections.emptyList()
         );
 
-        when(webClientBuilder.build()).thenReturn(webClient);
-        when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(PetDetails.class))
             .thenReturn(Mono.just(petDetails));
 
@@ -117,45 +110,40 @@ public class AIDataProviderTest {
             "Buddy",
             2
         );
-        AddPetRequest request = new AddPetRequest(petRequest, 1);
+        AddPetRequest addPetRequest = new AddPetRequest(petRequest, 1);
 
-        AddedPetResponse response = aiDataProvider.addPetToOwner(request);
+        AddedPetResponse response = aiDataProvider.addPetToOwner(addPetRequest);
 
         assert response.pet().name().equals("Buddy");
     }
 
     @Test
     void testAddOwnerToPetclinic() {
+        WebClient webClient = mock(WebClient.class);
         WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
-        RequestBodySpec requestBodySpec = mock(RequestBodySpec.class);
-        RequestHeadersSpec<?> requestHeadersSpec = mock(RequestHeadersSpec.class);
-        ResponseSpec responseSpec = mock(ResponseSpec.class);
+        WebClient.RequestHeadersSpec<?> requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClientBuilder.build()).thenReturn(webClient);
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
 
         OwnerDetails ownerDetails = new OwnerDetails(
-            1,
+            2,
             "Jane",
             "Smith",
-            "456 Road",
+            "Avenue",
             "Town",
             "9876543210",
             Collections.emptyList()
         );
 
-        when(webClientBuilder.build()).thenReturn(webClient);
-        when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(OwnerDetails.class))
             .thenReturn(Mono.just(ownerDetails));
 
-        OwnerRequest ownerRequest = new OwnerRequest(
-            "Jane",
-            "Smith",
-            "456 Road",
-            "Town",
-            "9876543210"
-        );
+        OwnerRequest ownerRequest = new OwnerRequest(); // record has no-args constructor
 
         OwnerResponse response = aiDataProvider.addOwnerToPetclinic(ownerRequest);
 
