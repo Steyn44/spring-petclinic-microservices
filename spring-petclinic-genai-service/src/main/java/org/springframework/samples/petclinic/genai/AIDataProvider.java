@@ -78,7 +78,7 @@ public class AIDataProvider {
         String query = (vetName == null) ? "fallback" : vetName;
 
         List<Document> documents = vectorStore.similaritySearch(
-                new SearchRequest(query).withTopK(topK)
+                SearchRequest.query(query).withTopK(topK)
         );
 
         List<String> vetContents = documents.stream()
