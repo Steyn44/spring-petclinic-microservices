@@ -12,10 +12,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.samples.petclinic.genai.dto.AddPetRequest;
-import org.springframework.samples.petclinic.genai.dto.OwnerDetails;
-import org.springframework.samples.petclinic.genai.dto.OwnerRequest;
-import org.springframework.samples.petclinic.genai.dto.PetDetails;
+import org.springframework.samples.petclinic.genai.dto.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClient.RequestBodySpec;
 import org.springframework.web.reactive.function.client.WebClient.RequestBodyUriSpec;
@@ -43,7 +40,15 @@ public class AIDataProviderTest {
 
     @Test
     void getAllOwners_shouldReturnOwnersResponse() {
-        List<OwnerDetails> owners = List.of(new OwnerDetails());
+        OwnerDetails owner = new OwnerDetails(
+            1,
+            "John",
+            "Doe",
+            "123 Street",
+            "City",
+            "1234567890",
+            List.of()
+        );
 
         var request = mock(RequestHeadersUriSpec.class);
         var responseSpec = mock(ResponseSpec.class);
@@ -52,7 +57,7 @@ public class AIDataProviderTest {
         when(request.uri("http://customers-service/owners")).thenReturn(request);
         when(request.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
-                .thenReturn(Mono.just(owners));
+                .thenReturn(Mono.just(List.of(owner)));
 
         OwnersResponse result = aiDataProvider.getAllOwners();
 
@@ -61,8 +66,17 @@ public class AIDataProviderTest {
 
     @Test
     void addPetToOwner_shouldReturnAddedPetResponse() {
-        PetDetails pet = new PetDetails();
-        AddPetRequest requestDto = new AddPetRequest(1, pet);
+        PetDetails pet = new PetDetails(
+            1,
+            "Buddy",
+            "2023-07-13",
+            new PetType(2, "Dog"),
+            List.of()
+        );
+        AddPetRequest requestDto = new AddPetRequest(
+            new PetRequest("Buddy", "2023-07-13", 2),
+            1
+        );
 
         var request = mock(RequestBodyUriSpec.class);
         var bodySpec = mock(RequestBodySpec.class);
@@ -70,7 +84,7 @@ public class AIDataProviderTest {
 
         when(webClient.post()).thenReturn(request);
         when(request.uri("http://customers-service/owners/1/pets")).thenReturn(bodySpec);
-        when(bodySpec.bodyValue(pet)).thenReturn(bodySpec);
+        when(bodySpec.bodyValue(any())).thenReturn(bodySpec);
         when(bodySpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(PetDetails.class)).thenReturn(Mono.just(pet));
 
@@ -81,8 +95,18 @@ public class AIDataProviderTest {
 
     @Test
     void addOwnerToPetclinic_shouldReturnOwnerResponse() {
-        OwnerDetails ownerDetails = new OwnerDetails();
-        OwnerRequest ownerRequest = new OwnerRequest();
+        OwnerDetails ownerDetails = new OwnerDetails(
+            1,
+            "John",
+            "Doe",
+            "123 Street",
+            "City",
+            "1234567890",
+            List.of()
+        );
+        OwnerRequest ownerRequest = new OwnerRequest(
+            "John", "Doe", "123 Street", "City", "1234567890"
+        );
 
         var request = mock(RequestBodyUriSpec.class);
         var bodySpec = mock(RequestBodySpec.class);
@@ -100,8 +124,8 @@ public class AIDataProviderTest {
     }
 
     @Test
-    void getVets_shouldQueryVectorStore_withNonNullVet() throws Exception {
-        Vet dummyVet = new Vet("Dr. House");
+    void getVets_shouldQueryVectorStore_withNonNullVet() {
+        Vet dummyVet = new Vet(1, "John", "Doe", List.of());
         VetRequest vetRequest = new VetRequest(dummyVet);
 
         List<Document> documents = List.of(new Document("Doc1 Content"));
@@ -111,16 +135,16 @@ public class AIDataProviderTest {
 
         VetResponse response = aiDataProvider.getVets(vetRequest);
 
-        assertThat(response.vets()).containsExactly("Doc1 Content");
+        assertThat(response.vet()).containsExactly("Doc1 Content");
 
         ArgumentCaptor<SearchRequest> captor = ArgumentCaptor.forClass(SearchRequest.class);
         verify(vectorStore).similaritySearch(captor.capture());
         assertThat(captor.getValue().getTopK()).isEqualTo(20);
-        assertThat(captor.getValue().getQuery()).contains("Dr. House");
+        assertThat(captor.getValue().getQuery()).contains("John Doe");
     }
 
     @Test
-    void getVets_shouldQueryVectorStore_withNullVet() throws Exception {
+    void getVets_shouldQueryVectorStore_withNullVet() {
         VetRequest vetRequest = new VetRequest(null);
 
         List<Document> documents = List.of(new Document("Fallback Doc"));
@@ -130,7 +154,7 @@ public class AIDataProviderTest {
 
         VetResponse response = aiDataProvider.getVets(vetRequest);
 
-        assertThat(response.vets()).containsExactly("Fallback Doc");
+        assertThat(response.vet()).containsExactly("Fallback Doc");
 
         ArgumentCaptor<SearchRequest> captor = ArgumentCaptor.forClass(SearchRequest.class);
         verify(vectorStore).similaritySearch(captor.capture());
