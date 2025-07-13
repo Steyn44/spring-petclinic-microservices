@@ -1,81 +1,90 @@
 package org.springframework.samples.petclinic.genai;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.ParameterizedTypeReference;
-//import org.springframework.samples.petclinic.genai.dto.AddPetRequest;
+import org.springframework.samples.petclinic.genai.dto.AddPetRequest;
+import org.springframework.samples.petclinic.genai.dto.AddedPetResponse;
 import org.springframework.samples.petclinic.genai.dto.OwnerDetails;
-//import org.springframework.samples.petclinic.genai.dto.OwnerRequest;
+import org.springframework.samples.petclinic.genai.dto.OwnerRequest;
+import org.springframework.samples.petclinic.genai.dto.OwnerResponse;
+import org.springframework.samples.petclinic.genai.dto.OwnersResponse;
 import org.springframework.samples.petclinic.genai.dto.PetDetails;
+import org.springframework.samples.petclinic.genai.dto.Vet;
+import org.springframework.samples.petclinic.genai.dto.VetRequest;
+import org.springframework.samples.petclinic.genai.dto.VetResponse;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClient.RequestBodySpec;
-import org.springframework.web.reactive.function.client.WebClient.RequestBodyUriSpec;
-import org.springframework.web.reactive.function.client.WebClient.RequestHeadersUriSpec;
-import org.springframework.web.reactive.function.client.WebClient.ResponseSpec;
 import reactor.core.publisher.Mono;
 
 public class AIDataProvider {
 
-    private final WebClient webClient;
+    private final WebClient.Builder webClientBuilder;
     private final VectorStore vectorStore;
 
     public AIDataProvider(WebClient.Builder webClientBuilder, VectorStore vectorStore) {
-        this.webClient = webClientBuilder.build();
+        this.webClientBuilder = webClientBuilder;
         this.vectorStore = vectorStore;
     }
 
     public OwnersResponse getAllOwners() {
-        RequestHeadersUriSpec<?> request = webClient.get();
-        ResponseSpec responseSpec = request
-                .uri("http://customers-service/owners")
-                .retrieve();
+        WebClient webClient = webClientBuilder.build();
 
-        List<OwnerDetails> owners = responseSpec.bodyToMono(
-                new ParameterizedTypeReference<List<OwnerDetails>>() {}).block();
+        List<OwnerDetails> owners = webClient.get()
+                .uri("http://customers-service/owners")
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<OwnerDetails>>() {})
+                .block();
 
         return new OwnersResponse(owners);
     }
 
-    public AddedPetResponse addPetToOwner(AddPetRequest requestDto) {
-        PetDetails pet = requestDto.pet();
-        ResponseSpec responseSpec = webClient
-                .post()
-                .uri("http://customers-service/owners/" + requestDto.ownerId() + "/pets")
-                .bodyValue(pet)
-                .retrieve();
+    public AddedPetResponse addPetToOwner(AddPetRequest request) {
+        WebClient webClient = webClientBuilder.build();
 
-        PetDetails result = responseSpec.bodyToMono(PetDetails.class).block();
-        return new AddedPetResponse(result);
+        PetDetails response = webClient.post()
+                .uri("http://customers-service/owners/" + request.ownerId() + "/pets")
+                .bodyValue(request.pet())
+                .retrieve()
+                .bodyToMono(PetDetails.class)
+                .block();
+
+        return new AddedPetResponse(response);
     }
 
     public OwnerResponse addOwnerToPetclinic(OwnerRequest ownerRequest) {
-        ResponseSpec responseSpec = webClient
-                .post()
+        WebClient webClient = webClientBuilder.build();
+
+        OwnerDetails response = webClient.post()
                 .uri("http://customers-service/owners")
                 .bodyValue(ownerRequest)
-                .retrieve();
+                .retrieve()
+                .bodyToMono(OwnerDetails.class)
+                .block();
 
-        OwnerDetails ownerDetails = responseSpec.bodyToMono(OwnerDetails.class).block();
-        return new OwnerResponse(ownerDetails);
+        return new OwnerResponse(response);
     }
 
     public VetResponse getVets(VetRequest vetRequest) {
-        int topK = vetRequest.vet() == null ? 50 : 20;
-        String query = vetRequest.vet() != null ? vetRequest.vet().name() : "default";
+        String vetName = null;
+        if (vetRequest != null && vetRequest.vet() != null) {
+            vetName = vetRequest.vet().name();
+        }
 
-        SearchRequest searchRequest = SearchRequest.builder()
-                .withQuery(query)
-                .withTopK(topK)
-                .build();
+        int topK = (vetName == null) ? 50 : 20;
+        String query = (vetName == null) ? "fallback" : vetName;
 
-        List<Document> documents = vectorStore.similaritySearch(searchRequest);
-        List<String> vetResults = documents.stream()
+        List<Document> documents = vectorStore.similaritySearch(
+                new SearchRequest(query).withTopK(topK)
+        );
+
+        List<String> vetContents = documents.stream()
                 .map(Document::getContent)
-                .toList();
+                .collect(Collectors.toList());
 
-        return new VetResponse(vetResults);
+        return new VetResponse(vetContents);
     }
 }
