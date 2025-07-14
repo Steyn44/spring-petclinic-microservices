@@ -42,8 +42,8 @@ public class AIDataProviderTest {
     @Test
     void testGetAllOwners() {
         WebClient webClient = mock(WebClient.class);
-        RequestHeadersUriSpec<?> uriSpec = mock(RequestHeadersUriSpec.class);
-        RequestHeadersSpec<?> headersSpec = mock(RequestHeadersSpec.class);
+        RequestHeadersUriSpec uriSpec = mock(RequestHeadersUriSpec.class);
+        RequestHeadersSpec headersSpec = mock(RequestHeadersSpec.class);
         ResponseSpec responseSpec = mock(ResponseSpec.class);
 
         when(webClientBuilder.build()).thenReturn(webClient);
@@ -73,7 +73,7 @@ public class AIDataProviderTest {
     void testAddPetToOwner() {
         WebClient webClient = mock(WebClient.class);
         RequestBodyUriSpec bodyUriSpec = mock(RequestBodyUriSpec.class);
-        RequestHeadersSpec<?> headersSpec = mock(RequestHeadersSpec.class);
+        RequestHeadersSpec headersSpec = mock(RequestHeadersSpec.class);
         ResponseSpec responseSpec = mock(ResponseSpec.class);
 
         when(webClientBuilder.build()).thenReturn(webClient);
@@ -99,7 +99,7 @@ public class AIDataProviderTest {
             "Buddy",
             2
         );
-        AddPetRequest addPetRequest = new AddPetRequest(petRequest, 1);
+        AddPetRequest addPetRequest = new AddPetRequest(petRequest, petRequest.ownerId());
 
         AddedPetResponse response = aiDataProvider.addPetToOwner(addPetRequest);
 
@@ -110,7 +110,7 @@ public class AIDataProviderTest {
     void testAddOwnerToPetclinic() {
         WebClient webClient = mock(WebClient.class);
         RequestBodyUriSpec bodyUriSpec = mock(RequestBodyUriSpec.class);
-        RequestHeadersSpec<?> headersSpec = mock(RequestHeadersSpec.class);
+        RequestHeadersSpec headersSpec = mock(RequestHeadersSpec.class);
         ResponseSpec responseSpec = mock(ResponseSpec.class);
 
         when(webClientBuilder.build()).thenReturn(webClient);
