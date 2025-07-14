@@ -53,8 +53,8 @@ public class AIDataProviderTest {
     @Test
     void testGetAllOwners() {
         WebClient webClient = mock(WebClient.class);
-        WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
-        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        WebClient.RequestHeadersSpec<?> requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
         when(webClientBuilder.build()).thenReturn(webClient);
@@ -84,7 +84,7 @@ public class AIDataProviderTest {
     void testAddPetToOwner() {
         WebClient webClient = mock(WebClient.class);
         WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
-        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.RequestHeadersSpec<?> requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
         when(webClientBuilder.build()).thenReturn(webClient);
@@ -110,7 +110,9 @@ public class AIDataProviderTest {
             "Buddy",
             2
         );
-        AddPetRequest addPetRequest = new AddPetRequest(petRequest, 1);
+
+        // ✅ Fixed parameter order here
+        AddPetRequest addPetRequest = new AddPetRequest(1, petRequest);
 
         AddedPetResponse response = aiDataProvider.addPetToOwner(addPetRequest);
 
@@ -121,7 +123,7 @@ public class AIDataProviderTest {
     void testAddOwnerToPetclinic() {
         WebClient webClient = mock(WebClient.class);
         WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
-        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.RequestHeadersSpec<?> requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
         when(webClientBuilder.build()).thenReturn(webClient);
@@ -143,14 +145,7 @@ public class AIDataProviderTest {
         when(responseSpec.bodyToMono(OwnerDetails.class))
             .thenReturn(Mono.just(ownerDetails));
 
-        // ✅ supply proper arguments instead of empty constructor
-        OwnerRequest ownerRequest = new OwnerRequest(
-            "Jane",
-            "Smith",
-            "Avenue",
-            "Town",
-            "9876543210"
-        );
+        OwnerRequest ownerRequest = new OwnerRequest("Jane", "Smith", "Avenue", "Town", "9876543210");
 
         OwnerResponse response = aiDataProvider.addOwnerToPetclinic(ownerRequest);
 
