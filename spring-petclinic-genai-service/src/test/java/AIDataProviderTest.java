@@ -99,7 +99,8 @@ public class AIDataProviderTest {
             "Buddy",
             2
         );
-        AddPetRequest addPetRequest = new AddPetRequest(petRequest, petRequest.ownerId());
+
+        AddPetRequest addPetRequest = new AddPetRequest(petRequest, 2);
 
         AddedPetResponse response = aiDataProvider.addPetToOwner(addPetRequest);
 
