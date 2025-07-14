@@ -168,7 +168,7 @@ public class AIDataProviderTest {
 
         VetResponse response = aiDataProvider.getVets(vetRequest);
 
-        assert response.vet().size() == 1;
-        assert response.vet().get(0).contains("Dr. Strange");
+        assert response.vets().size() == 1;
+        assert response.vets().get(0).contains("Dr. Strange");
     }
 }
