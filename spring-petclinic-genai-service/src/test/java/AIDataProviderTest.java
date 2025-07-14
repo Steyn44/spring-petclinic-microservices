@@ -111,7 +111,6 @@ public class AIDataProviderTest {
             2
         );
 
-        // ✅ FIXED: ownerId is int (e.g. 2)
         AddPetRequest addPetRequest = new AddPetRequest(petRequest, 2);
 
         AddedPetResponse response = aiDataProvider.addPetToOwner(addPetRequest);
@@ -145,7 +144,13 @@ public class AIDataProviderTest {
         when(responseSpec.bodyToMono(OwnerDetails.class))
             .thenReturn(Mono.just(ownerDetails));
 
-        OwnerRequest ownerRequest = new OwnerRequest();
+        OwnerRequest ownerRequest = new OwnerRequest(
+            "Jane",
+            "Smith",
+            "Avenue",
+            "Town",
+            "9876543210"
+        );
 
         OwnerResponse response = aiDataProvider.addOwnerToPetclinic(ownerRequest);
 
@@ -174,3 +179,4 @@ public class AIDataProviderTest {
         assert response.vets().get(0).contains("Dr. Strange");
     }
 }
+//added new code to tackle the compilation errors 
