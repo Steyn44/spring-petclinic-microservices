@@ -2,10 +2,8 @@ package org.springframework.samples.petclinic.genai.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.samples.petclinic.genai.dto.*;
-import org.springframework.samples.petclinic.genai.openai.VectorStore;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -21,15 +19,13 @@ class AIDataProviderTest {
     private WebClient.Builder webClientBuilder;
     private WebClient webClient;
     private WebClient.ResponseSpec responseSpec;
-    private VectorStore vectorStore;
 
     @BeforeEach
     void setUp() {
-        // Deep stubbing solves all generics issues
+        // Deep stubbing
         webClient = mock(WebClient.class, RETURNS_DEEP_STUBS);
         webClientBuilder = mock(WebClient.Builder.class);
         responseSpec = mock(WebClient.ResponseSpec.class);
-        vectorStore = mock(VectorStore.class);
 
         when(webClientBuilder.build()).thenReturn(webClient);
     }
@@ -46,7 +42,6 @@ class AIDataProviderTest {
                 Collections.emptyList()
         );
 
-        // Arrange the chain
         when(webClient.get()
                       .uri(anyString())
                       .retrieve())
@@ -55,7 +50,7 @@ class AIDataProviderTest {
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
                 .thenReturn(Mono.just(List.of(owner)));
 
-        AIDataProvider provider = new AIDataProvider(webClientBuilder, vectorStore);
+        AIDataProvider provider = new AIDataProvider(webClientBuilder);
 
         OwnersResponse response = provider.getAllOwners();
 
@@ -80,7 +75,7 @@ class AIDataProviderTest {
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
                 .thenReturn(Mono.just(List.of(pet)));
 
-        AIDataProvider provider = new AIDataProvider(webClientBuilder, vectorStore);
+        AIDataProvider provider = new AIDataProvider(webClientBuilder);
 
         PetsResponse response = provider.getAllPets();
 
@@ -104,7 +99,7 @@ class AIDataProviderTest {
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
                 .thenReturn(Mono.just(List.of(vet)));
 
-        AIDataProvider provider = new AIDataProvider(webClientBuilder, vectorStore);
+        AIDataProvider provider = new AIDataProvider(webClientBuilder);
 
         VetsResponse response = provider.getAllVets();
 
@@ -115,7 +110,6 @@ class AIDataProviderTest {
     void testAddPet() {
         PetRequest petRequest = new PetRequest("Buddy", "dog", "2022-05-01");
 
-        // The second parameter in AddPetRequest is an int
         AddPetRequest addPetRequest = new AddPetRequest(petRequest, 2);
 
         when(webClient.post()
@@ -127,7 +121,7 @@ class AIDataProviderTest {
         when(responseSpec.bodyToMono(Void.class))
                 .thenReturn(Mono.empty());
 
-        AIDataProvider provider = new AIDataProvider(webClientBuilder, vectorStore);
+        AIDataProvider provider = new AIDataProvider(webClientBuilder);
 
         provider.addPet(addPetRequest);
 
