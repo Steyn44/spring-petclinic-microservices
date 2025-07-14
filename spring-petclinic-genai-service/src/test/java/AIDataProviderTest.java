@@ -143,7 +143,14 @@ public class AIDataProviderTest {
         when(responseSpec.bodyToMono(OwnerDetails.class))
             .thenReturn(Mono.just(ownerDetails));
 
-        OwnerRequest ownerRequest = new OwnerRequest(); // record has no-args constructor
+        // ✅ FIX #2 - create OwnerRequest with all required arguments
+        OwnerRequest ownerRequest = new OwnerRequest(
+            "Jane",
+            "Smith",
+            "Avenue",
+            "Town",
+            "9876543210"
+        );
 
         OwnerResponse response = aiDataProvider.addOwnerToPetclinic(ownerRequest);
 
@@ -168,6 +175,7 @@ public class AIDataProviderTest {
 
         VetResponse response = aiDataProvider.getVets(vetRequest);
 
+        // ✅ FIX #1 - use correct accessor method vets() instead of vet()
         assert response.vets().size() == 1;
         assert response.vets().get(0).contains("Dr. Strange");
     }
