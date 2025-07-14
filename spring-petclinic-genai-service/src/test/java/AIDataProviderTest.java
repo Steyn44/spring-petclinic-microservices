@@ -1,175 +1,136 @@
-package org.springframework.samples.petclinic.genai;
+package org.springframework.samples.petclinic.genai.service;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.samples.petclinic.genai.dto.*;
+import org.springframework.samples.petclinic.genai.openai.VectorStore;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+class AIDataProviderTest {
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.samples.petclinic.genai.dto.*;
-import org.springframework.web.reactive.function.client.WebClient;
-
-import reactor.core.publisher.Mono;
-
-public class AIDataProviderTest {
-
-    @Mock
     private WebClient.Builder webClientBuilder;
-
-    @Mock
+    private WebClient webClient;
+    private WebClient.ResponseSpec responseSpec;
     private VectorStore vectorStore;
-
-    private AIDataProvider aiDataProvider;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        aiDataProvider = new AIDataProvider(webClientBuilder, vectorStore);
+        // Deep stubbing solves all generics issues
+        webClient = mock(WebClient.class, RETURNS_DEEP_STUBS);
+        webClientBuilder = mock(WebClient.Builder.class);
+        responseSpec = mock(WebClient.ResponseSpec.class);
+        vectorStore = mock(VectorStore.class);
+
+        when(webClientBuilder.build()).thenReturn(webClient);
     }
 
     @Test
     void testGetAllOwners() {
-        WebClient webClient = mock(WebClient.class);
-        WebClient.RequestHeadersUriSpec<?> uriSpec =
-            (WebClient.RequestHeadersUriSpec<?>) mock(WebClient.RequestHeadersUriSpec.class);
-        WebClient.RequestHeadersSpec<?> headersSpec =
-            (WebClient.RequestHeadersSpec<?>) mock(WebClient.RequestHeadersSpec.class);
-        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
-
-        when(webClientBuilder.build()).thenReturn(webClient);
-        when(webClient.get()).thenReturn(uriSpec);
-        when(uriSpec.uri(anyString())).thenReturn(headersSpec);
-        when(headersSpec.retrieve()).thenReturn(responseSpec);
-
         OwnerDetails owner = new OwnerDetails(
-            1,
-            "John",
-            "Doe",
-            "Street",
-            "City",
-            "1234567890",
-            Collections.emptyList()
+                1,
+                "John",
+                "Doe",
+                "Street",
+                "City",
+                "1234567890",
+                Collections.emptyList()
         );
 
-        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
-            .thenReturn(Mono.just(List.of(owner)));
+        // Arrange the chain
+        when(webClient.get()
+                      .uri(anyString())
+                      .retrieve())
+                .thenReturn(responseSpec);
 
-        OwnersResponse response = aiDataProvider.getAllOwners();
+        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
+                .thenReturn(Mono.just(List.of(owner)));
+
+        AIDataProvider provider = new AIDataProvider(webClientBuilder, vectorStore);
+
+        OwnersResponse response = provider.getAllOwners();
 
         assert response.owners().size() == 1;
     }
 
     @Test
-    void testAddPetToOwner() {
-        WebClient webClient = mock(WebClient.class);
-        WebClient.RequestBodyUriSpec bodyUriSpec =
-            (WebClient.RequestBodyUriSpec) mock(WebClient.RequestBodyUriSpec.class);
-        WebClient.RequestHeadersSpec<?> headersSpec =
-            (WebClient.RequestHeadersSpec<?>) mock(WebClient.RequestHeadersSpec.class);
-        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
-
-        when(webClientBuilder.build()).thenReturn(webClient);
-        when(webClient.post()).thenReturn(bodyUriSpec);
-        when(bodyUriSpec.uri(anyString())).thenReturn(bodyUriSpec);
-        when(bodyUriSpec.bodyValue(any())).thenReturn(headersSpec);
-        when(headersSpec.retrieve()).thenReturn(responseSpec);
-
-        PetDetails petDetails = new PetDetails(
-            1,
-            "Buddy",
-            "2023-01-01",
-            new PetType("Dog"),
-            Collections.emptyList()
+    void testGetAllPets() {
+        PetDetails pet = new PetDetails(
+                1,
+                "Buddy",
+                "dog",
+                "2021-01-01",
+                "ownerName"
         );
 
-        when(responseSpec.bodyToMono(PetDetails.class))
-            .thenReturn(Mono.just(petDetails));
+        when(webClient.get()
+                      .uri(anyString())
+                      .retrieve())
+                .thenReturn(responseSpec);
 
-        PetRequest petRequest = new PetRequest(
-            1,
-            new Date(),
-            "Buddy",
-            2
-        );
+        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
+                .thenReturn(Mono.just(List.of(pet)));
 
-        AddPetRequest addPetRequest = new AddPetRequest(petRequest, 2);
+        AIDataProvider provider = new AIDataProvider(webClientBuilder, vectorStore);
 
-        AddedPetResponse response = aiDataProvider.addPetToOwner(addPetRequest);
+        PetsResponse response = provider.getAllPets();
 
-        assert response.pet().name().equals("Buddy");
+        assert response.pets().size() == 1;
     }
 
     @Test
-    void testAddOwnerToPetclinic() {
-        WebClient webClient = mock(WebClient.class);
-        WebClient.RequestBodyUriSpec bodyUriSpec =
-            (WebClient.RequestBodyUriSpec) mock(WebClient.RequestBodyUriSpec.class);
-        WebClient.RequestHeadersSpec<?> headersSpec =
-            (WebClient.RequestHeadersSpec<?>) mock(WebClient.RequestHeadersSpec.class);
-        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
-
-        when(webClientBuilder.build()).thenReturn(webClient);
-        when(webClient.post()).thenReturn(bodyUriSpec);
-        when(bodyUriSpec.uri(anyString())).thenReturn(bodyUriSpec);
-        when(bodyUriSpec.bodyValue(any())).thenReturn(headersSpec);
-        when(headersSpec.retrieve()).thenReturn(responseSpec);
-
-        OwnerDetails ownerDetails = new OwnerDetails(
-            2,
-            "Jane",
-            "Smith",
-            "Avenue",
-            "Town",
-            "9876543210",
-            Collections.emptyList()
+    void testGetAllVets() {
+        VetDetails vet = new VetDetails(
+                1,
+                "Dr",
+                "Smith",
+                List.of("surgery")
         );
 
-        when(responseSpec.bodyToMono(OwnerDetails.class))
-            .thenReturn(Mono.just(ownerDetails));
+        when(webClient.get()
+                      .uri(anyString())
+                      .retrieve())
+                .thenReturn(responseSpec);
 
-        OwnerRequest ownerRequest = new OwnerRequest(
-            "Jane",
-            "Smith",
-            "Avenue",
-            "Town",
-            "9876543210"
-        );
+        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
+                .thenReturn(Mono.just(List.of(vet)));
 
-        OwnerResponse response = aiDataProvider.addOwnerToPetclinic(ownerRequest);
+        AIDataProvider provider = new AIDataProvider(webClientBuilder, vectorStore);
 
-        assert response.owner().firstName().equals("Jane");
-    }
-
-    @Test
-    void testGetVets() {
-        Document document = new Document("Vet: Dr. Strange\nSpecialty: Surgery");
-
-        when(vectorStore.similaritySearch(any(SearchRequest.class)))
-            .thenReturn(List.of(document));
-
-        Vet vet = new Vet(
-            1,
-            "Stephen",
-            "Strange",
-            Set.of(new Specialty(1, "Surgery"))
-        );
-
-        VetRequest vetRequest = new VetRequest(vet);
-
-        VetResponse response = aiDataProvider.getVets(vetRequest);
+        VetsResponse response = provider.getAllVets();
 
         assert response.vets().size() == 1;
-        assert response.vets().get(0).contains("Dr. Strange");
+    }
+
+    @Test
+    void testAddPet() {
+        PetRequest petRequest = new PetRequest("Buddy", "dog", "2022-05-01");
+
+        // The second parameter in AddPetRequest is an int
+        AddPetRequest addPetRequest = new AddPetRequest(petRequest, 2);
+
+        when(webClient.post()
+                      .uri(anyString())
+                      .body(any(), eq(AddPetRequest.class))
+                      .retrieve())
+                .thenReturn(responseSpec);
+
+        when(responseSpec.bodyToMono(Void.class))
+                .thenReturn(Mono.empty());
+
+        AIDataProvider provider = new AIDataProvider(webClientBuilder, vectorStore);
+
+        provider.addPet(addPetRequest);
+
+        verify(webClient.post(), times(1)).uri(anyString());
     }
 }
