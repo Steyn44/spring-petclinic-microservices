@@ -53,8 +53,8 @@ public class AIDataProviderTest {
     @Test
     void testGetAllOwners() {
         WebClient webClient = mock(WebClient.class);
-        WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
-        WebClient.RequestHeadersSpec<?> requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
         when(webClientBuilder.build()).thenReturn(webClient);
@@ -84,7 +84,7 @@ public class AIDataProviderTest {
     void testAddPetToOwner() {
         WebClient webClient = mock(WebClient.class);
         WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
-        WebClient.RequestHeadersSpec<?> requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
         when(webClientBuilder.build()).thenReturn(webClient);
@@ -121,7 +121,7 @@ public class AIDataProviderTest {
     void testAddOwnerToPetclinic() {
         WebClient webClient = mock(WebClient.class);
         WebClient.RequestBodyUriSpec requestBodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
-        WebClient.RequestHeadersSpec<?> requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
         when(webClientBuilder.build()).thenReturn(webClient);
@@ -143,7 +143,7 @@ public class AIDataProviderTest {
         when(responseSpec.bodyToMono(OwnerDetails.class))
             .thenReturn(Mono.just(ownerDetails));
 
-        // ✅ FIX #2 - create OwnerRequest with all required arguments
+        // ✅ supply proper arguments instead of empty constructor
         OwnerRequest ownerRequest = new OwnerRequest(
             "Jane",
             "Smith",
@@ -175,7 +175,6 @@ public class AIDataProviderTest {
 
         VetResponse response = aiDataProvider.getVets(vetRequest);
 
-        // ✅ FIX #1 - use correct accessor method vets() instead of vet()
         assert response.vets().size() == 1;
         assert response.vets().get(0).contains("Dr. Strange");
     }
