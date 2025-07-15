@@ -1,17 +1,13 @@
 package org.springframework.samples.petclinic.api.boundary.web;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import static org.mockito.Mockito.*;    // ✅ static import is enough
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.cloud.circuitbreaker.resilience4j.ReactiveResilience4JAutoConfiguration;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.samples.petclinic.api.application.CustomersServiceClient;
 import org.springframework.samples.petclinic.api.application.VisitsServiceClient;
 import org.springframework.samples.petclinic.api.dto.*;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
@@ -20,9 +16,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
-@WebFluxTest(controllers = ApiGatewayController.class)
-@Import({ReactiveResilience4JAutoConfiguration.class, CircuitBreakerConfiguration.class})
+import static org.mockito.Mockito.*;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 class ApiGatewayControllerTest {
 
     @MockBean
@@ -46,12 +43,10 @@ class ApiGatewayControllerTest {
             .pets(List.of(cat))
             .build();
 
-        when(customersServiceClient.getOwner(1))
-            .thenReturn(Mono.just(owner));
+        when(customersServiceClient.getOwner(1)).thenReturn(Mono.just(owner));
 
         VisitDetails visit = new VisitDetails(300, cat.id(), null, "First visit");
         Visits visits = new Visits(List.of(visit));
-
         when(visitsServiceClient.getVisitsForPets(Collections.singletonList(cat.id())))
             .thenReturn(Mono.just(visits));
 
@@ -64,9 +59,6 @@ class ApiGatewayControllerTest {
             .jsonPath("$.pets[0].visits[0].description").isEqualTo("First visit");
     }
 
-    /**
-     * Test fallback logic when VisitsService is down
-     */
     @Test
     void getOwnerDetails_withServiceError() {
         PetDetails cat = PetDetails.PetDetailsBuilder.aPetDetails()
@@ -79,9 +71,7 @@ class ApiGatewayControllerTest {
             .pets(List.of(cat))
             .build();
 
-        when(customersServiceClient.getOwner(1))
-            .thenReturn(Mono.just(owner));
-
+        when(customersServiceClient.getOwner(1)).thenReturn(Mono.just(owner));
         when(visitsServiceClient.getVisitsForPets(Collections.singletonList(cat.id())))
             .thenReturn(Mono.error(new ConnectException("Simulate error")));
 
