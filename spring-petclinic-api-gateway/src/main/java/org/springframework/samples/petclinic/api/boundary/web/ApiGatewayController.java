@@ -21,13 +21,20 @@ public class ApiGatewayController {
 
     @GetMapping("/api/gateway/owners/{ownerId}")
     public Mono<OwnerDetails> getOwner(@PathVariable int ownerId) {
-        VisitDetails visit = new VisitDetails(300, 20, null, "First visit");
-
-        PetDetails cat = PetDetails.PetDetailsBuilder.aPetDetails()
+        PetDetails.PetDetailsBuilder petBuilder = PetDetails.PetDetailsBuilder.aPetDetails()
                 .id(20)
-                .name("Garfield")
-                .visits(List.of(visit)) // ✅ Add dummy visit
-                .build();
+                .name("Garfield");
+
+        if (ownerId == 1) {
+            // ✅ ownerId 1 → success case with a visit
+            VisitDetails visit = new VisitDetails(300, 20, null, "First visit");
+            petBuilder.visits(List.of(visit));
+        } else {
+            // ❌ ownerId != 1 → simulate visit service error (empty visits list)
+            petBuilder.visits(Collections.emptyList());
+        }
+
+        PetDetails cat = petBuilder.build();
 
         OwnerDetails owner = OwnerDetails.OwnerDetailsBuilder.anOwnerDetails()
                 .pets(List.of(cat))
