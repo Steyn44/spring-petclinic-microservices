@@ -71,12 +71,12 @@ class ApiGatewayControllerTest {
             .pets(List.of(cat))
             .build();
 
-        when(customersServiceClient.getOwner(1)).thenReturn(Mono.just(owner));
+        when(customersServiceClient.getOwner(999)).thenReturn(Mono.just(owner));
         when(visitsServiceClient.getVisitsForPets(Collections.singletonList(cat.id())))
             .thenReturn(Mono.error(new ConnectException("Simulate error")));
 
         client.get()
-            .uri("/api/gateway/owners/1")
+            .uri("/api/gateway/owners/999")
             .exchange()
             .expectStatus().isOk()
             .expectBody()
