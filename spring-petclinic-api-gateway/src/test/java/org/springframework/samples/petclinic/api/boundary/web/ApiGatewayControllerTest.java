@@ -2,7 +2,7 @@ package org.springframework.samples.petclinic.api.boundary.web;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.*;    // ✅ static import is enough
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -34,7 +34,6 @@ class ApiGatewayControllerTest {
     @Autowired
     private WebTestClient client;
 
-
     @Test
     void getOwnerDetails_withAvailableVisitsService() {
         PetDetails cat = PetDetails.PetDetailsBuilder.aPetDetails()
@@ -42,17 +41,18 @@ class ApiGatewayControllerTest {
             .name("Garfield")
             .visits(new ArrayList<>())
             .build();
+
         OwnerDetails owner = OwnerDetails.OwnerDetailsBuilder.anOwnerDetails()
             .pets(List.of(cat))
             .build();
-        Mockito
-            .when(customersServiceClient.getOwner(1))
+
+        when(customersServiceClient.getOwner(1))
             .thenReturn(Mono.just(owner));
 
         VisitDetails visit = new VisitDetails(300, cat.id(), null, "First visit");
         Visits visits = new Visits(List.of(visit));
-        Mockito
-            .when(visitsServiceClient.getVisitsForPets(Collections.singletonList(cat.id())))
+
+        when(visitsServiceClient.getVisitsForPets(Collections.singletonList(cat.id())))
             .thenReturn(Mono.just(visits));
 
         client.get()
@@ -65,7 +65,7 @@ class ApiGatewayControllerTest {
     }
 
     /**
-     * Test Resilience4j fallback method
+     * Test fallback logic when VisitsService is down
      */
     @Test
     void getOwnerDetails_withServiceError() {
@@ -74,15 +74,15 @@ class ApiGatewayControllerTest {
             .name("Garfield")
             .visits(new ArrayList<>())
             .build();
+
         OwnerDetails owner = OwnerDetails.OwnerDetailsBuilder.anOwnerDetails()
             .pets(List.of(cat))
             .build();
-        Mockito
-            .when(customersServiceClient.getOwner(1))
+
+        when(customersServiceClient.getOwner(1))
             .thenReturn(Mono.just(owner));
 
-        Mockito
-            .when(visitsServiceClient.getVisitsForPets(Collections.singletonList(cat.id())))
+        when(visitsServiceClient.getVisitsForPets(Collections.singletonList(cat.id())))
             .thenReturn(Mono.error(new ConnectException("Simulate error")));
 
         client.get()
@@ -93,5 +93,4 @@ class ApiGatewayControllerTest {
             .jsonPath("$.pets[0].name").isEqualTo("Garfield")
             .jsonPath("$.pets[0].visits").isEmpty();
     }
-
 }
