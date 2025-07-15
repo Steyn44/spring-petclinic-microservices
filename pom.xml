@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -145,20 +146,20 @@
                         </executions>
                     </plugin>
 
-                    <!-- ✅ ✅ Jacoco plugin with multi-module aggregate -->
+                    <!-- ✅ ✅ JaCoCo plugin with multi-module aggregate -->
                     <plugin>
-                       <groupId>org.jacoco</groupId>
-                         <artifactId>jacoco-maven-plugin</artifactId>
-                          <version>0.8.11</version>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.11</version>
                         <executions>
-                            <!-- This attaches the JaCoCo agent to all tests -->
+                            <!-- Attaches JaCoCo agent to all tests -->
                             <execution>
                                 <id>prepare-agent</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
                             </execution>
-                            <!-- This generates an aggregated report for all modules -->
+                            <!-- Generates aggregated report -->
                             <execution>
                                 <id>report-aggregate</id>
                                 <phase>verify</phase>
@@ -174,6 +175,16 @@
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+
+                    <!-- ✅ ✅ Surefire plugin to ensure test execution + JaCoCo coverage -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>3.2.5</version>
+                        <configuration>
+                            <argLine>${jacoco.argLine}</argLine>
+                        </configuration>
                     </plugin>
 
                 </plugins>
