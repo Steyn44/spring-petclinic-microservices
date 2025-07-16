@@ -13,7 +13,7 @@ pipeline {
     stages {
         stage('Build and Test') {
             steps {
-                sh 'mvn clean verify'
+                sh 'mvn clean verify -P springboot'
                 sh 'mvn test'
             }
         }
