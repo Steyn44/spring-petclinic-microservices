@@ -31,7 +31,7 @@ pipeline {
                         mvn sonar:sonar \
                             -Dsonar.projectKey=My_Java_Project_Sonar \
                             -Dsonar.projectName=My_Java_Project_Sonar \
-                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml,target/site/jacoco-it/jacoco.xml
+                            
                     """
                 }
             }
