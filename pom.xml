@@ -64,6 +64,57 @@
         </dependencies>
     </dependencyManagement>
 
+    <build>
+        <pluginManagement>
+            <plugins>
+
+                <!-- ✅ JaCoCo plugin with multi-module aggregate -->
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>0.8.11</version>
+                    <executions>
+                        <!-- Attaches JaCoCo agent to all tests -->
+                        <execution>
+                            <id>prepare-agent</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <!-- Generates aggregated report -->
+                        <execution>
+                            <id>report-aggregate</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>report-aggregate</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/jacoco-aggregate-report</outputDirectory>
+                                <reports>
+                                    <xml enabled="true"/>
+                                    <html enabled="true"/>
+                                </reports>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- ✅ Surefire plugin with argLine propagation -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                    <configuration>
+                        <argLine>${argLine}</argLine>
+                        <forkCount>0</forkCount>
+                        <reuseForks>false</reuseForks>
+                    </configuration>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+    </build>
+
     <profiles>
         <profile>
             <id>springboot</id>
@@ -145,48 +196,6 @@
                             </execution>
                         </executions>
                     </plugin>
-
-                    <!-- ✅ ✅ JaCoCo plugin with multi-module aggregate -->
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.11</version>
-                        <executions>
-                            <!-- Attaches JaCoCo agent to all tests -->
-                            <execution>
-                                <id>prepare-agent</id>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                            </execution>
-                            <!-- Generates aggregated report -->
-                            <execution>
-                                <id>report-aggregate</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>report-aggregate</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/jacoco-aggregate-report</outputDirectory>
-                                    <reports>
-                                        <xml enabled="true"/>
-                                        <html enabled="true"/>
-                                    </reports>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <!-- ✅ ✅ Surefire plugin to ensure test execution + JaCoCo coverage -->
-                    <plugin>
-  <groupId>org.apache.maven.plugins</groupId>
-  <artifactId>maven-surefire-plugin</artifactId>
-  <version>3.2.5</version>
-  <configuration>
-    <forkCount>0</forkCount>
-    <reuseForks>false</reuseForks>
-  </configuration>
-</plugin>
 
                 </plugins>
             </build>
