@@ -13,14 +13,14 @@ pipeline {
     stages {
         stage('Build and Test') {
             steps {
-                sh 'mvn clean verify -P springboot'
+             sh 'mvn clean verify -P springboot'
                 sh 'mvn test'
             }
         }
 
         stage('Check JaCoCo Report Exists') {
             steps {
-                sh 'ls -lh target/site/jacoco/jacoco.xml || echo "Jacoco XML not found!"'
+                sh 'ls -lh .spring-petclinic-api-gateway/target/jacoco-aggregate-report/jacoco/jacoco.xml || echo "Jacoco XML not found!"'
             }
         }
 
