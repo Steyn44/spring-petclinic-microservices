@@ -20,7 +20,7 @@ pipeline {
 
         stage('Check JaCoCo Report Exists') {
             steps {
-                sh 'ls -lh .spring-petclinic-api-gateway/target/jacoco-aggregate-report/jacoco/jacoco.xml || echo "Jacoco XML not found!"'
+                sh 'ls -lh /target/jacoco-aggregate-report/jacoco/jacoco.xml || echo "Jacoco XML not found!"'
             }
         }
 
